@@ -64,7 +64,7 @@ router.post("/upload-movie", upload.fields([{ name: "video" }, { name: "image" }
     try {
         console.log("Uploaded files:", req.files); // Debugging line
 
-        const { category, title, description, youtubeLink } = req.body;
+        const { category, type, title, genre, releaseDate, cast, director, seasons, episodes, duration, rating, description, youtubeLink } = req.body;
 
         // Ensure videoPath is assigned only if the file exists
         const videoPath = req.files["video"] ? req.files["video"][0].path : null;
@@ -75,7 +75,7 @@ router.post("/upload-movie", upload.fields([{ name: "video" }, { name: "image" }
             return res.status(400).json({ message: "Video file is required." });
         }
 
-        const newMovie = new Movie({ category, title, description, youtubeLink, videoPath, imagePath, subtitlePath });
+        const newMovie = new Movie({ category, type, title, genre, releaseDate, cast, director, seasons, episodes, duration, rating, description, youtubeLink, videoPath, imagePath, subtitlePath });
         await newMovie.save();
 
         res.status(201).json({ message: "Movie uploaded successfully", movie: newMovie });
@@ -88,23 +88,33 @@ router.post("/upload-movie", upload.fields([{ name: "video" }, { name: "image" }
 // GET all movies
 router.get("/all-movies", async (req, res) => {
     try {
-        const movies = await Movie.find();
+
+        const movies = await Movie.find({ type: "Movie" });
         res.json(movies);
     } catch (err) {
         res.status(500).json({ message: "Server error" });
     }
 });
+// GET all Tv Series
+router.get("/all-tvShows", async (req, res) => {
+    try {
+        const tvShows = await Movie.find({ type: "TV Series" });
+        res.json(tvShows)
+    } catch (err) {
+        res.status(500).json({ message: "Server error" })
+    }
+})
 // Get movies category
 
 // POST route to add a new category
 
 
-// GET movies by category
+// GET media by category
 router.get("/movies/:category", async (req, res) => {
     try {
         const category = req.params.category;
         const movies = await Movie.find({ category });
-        console.log(movies);
+
         if (movies.length === 0) {
             return res.status(404).json({ message: "No movies found for this category" });
         }
@@ -115,6 +125,21 @@ router.get("/movies/:category", async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 });
+// GET media by type
+router.get("/media/:type", async (req, res) => {
+    try {
+        const type = req.params.type;
+        const media = await Movie.find({ type });
+        if (media.length === 0) {
+            return res.status(404).json({ message: "No media found for this type" });
+        }
+        res.json(media)
+    }
+    catch (err) {
+        console.error('Error fetching movies by type', err);
+        res.status(500).json({ message: "Server error" });
+    }
+})
 // GET movie by ID
 router.get("/movie/:id", async (req, res) => {
     try {
