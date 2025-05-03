@@ -29,7 +29,7 @@ router.post("/register", async (req, res) => {
         console.error(error);
         res.status(500).json({ msg: "Server error" });
     }
-});
+});7
 router.post("/jwt", async (req, res) => {
     try {
         const { email } = req.body;
@@ -46,7 +46,7 @@ router.post("/jwt", async (req, res) => {
         const token = jwt.sign({ _id: user._id, email }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.status(201).json({ token, user_id: user._id });
-    } 
+    }
     catch (error) {
         console.error("JWT Error:", error);
         res.status(500).json({ msg: "Server error" });

@@ -64,7 +64,7 @@ router.post("/upload-movie", upload.fields([{ name: "video" }, { name: "image" }
     try {
         console.log("Uploaded files:", req.files); // Debugging line
 
-        const { category, type, title, genre, releaseDate, cast, director, seasons, episodes, duration, rating, description, youtubeLink } = req.body;
+        const { type, title, genre, releaseDate, cast, director, duration, rating, description, youtubeLink } = req.body;
 
         // Ensure videoPath is assigned only if the file exists
         const videoPath = req.files["video"] ? req.files["video"][0].path : null;
@@ -75,7 +75,7 @@ router.post("/upload-movie", upload.fields([{ name: "video" }, { name: "image" }
             return res.status(400).json({ message: "Video file is required." });
         }
 
-        const newMovie = new Movie({ category, type, title, genre, releaseDate, cast, director, seasons, episodes, duration, rating, description, youtubeLink, videoPath, imagePath, subtitlePath });
+        const newMovie = new Movie({ type, title, genre, releaseDate, cast, director, duration, rating, description, youtubeLink, videoPath, imagePath, subtitlePath });
         await newMovie.save();
 
         res.status(201).json({ message: "Movie uploaded successfully", movie: newMovie });
@@ -104,6 +104,72 @@ router.get("/all-tvShows", async (req, res) => {
         res.status(500).json({ message: "Server error" })
     }
 })
+// Get latest movies
+router.get("/latest-movies", async (req, res) => {
+    try {
+        const latestMovies = await Movie.find({ type: "Movie" })
+            .sort({ releaseDate: -1 }) // Sort by releaseDate descending
+            .limit(10); // Return the 10 latest movies (optional)
+
+        res.json(latestMovies);
+    } catch (err) {
+        res.status(500).json({ message: "Server error" });
+    }
+});
+// Route to get the details of a series episode based on ID, season, and episode
+router.get("/tvShows/:id/episodes", async (req, res) => {
+
+    const { id } = req.params;
+    const { season, episode } = req.query; // Get season and episode from query string
+
+    try {
+        const movie = await Movie.findById(id);
+
+        if (!movie || movie.type !== 'TV Series') {
+            return res.status(404).json({ message: "Movie not found or not a TV series" });
+        }
+
+        // Validate season and episode parameters
+        if (season > movie.seasons || episode > movie.episodes) {
+            return res.status(400).json({ message: "Invalid season or episode number" });
+        }
+
+        // Here, assuming each episode has a similar videoPath, subtitlePath, etc. for now.
+        const episodeData = {
+            title: `${movie.title} - Season ${season} Episode ${episode}`,
+            videoPath: movie.videoPath, // You can store episode-specific paths in your database if needed
+            subtitlePath: movie.subtitlePath,
+            imagePath: movie.imagePath,
+            description: movie.description,
+        };
+
+        // Return episode details
+        return res.json(episodeData);
+    } catch (error) {
+        console.error("Error fetching episode:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+// total seasons and episodes of tv series
+router.get('/tvShows/:id/metadata', async (req, res) => {
+    try {
+        const tvShow = await Movie.findById(req.params.id);
+
+        if (!tvShow || tvShow.type !== 'TV Series') {
+            return res.status(404).json({ message: 'TV Show not found or not a TV Series' });
+        }
+
+        res.json({
+            title: tvShow.title,
+            totalSeasons: tvShow.seasons,
+            totalEpisodes: tvShow.episodes
+        });
+    } catch (error) {
+        console.error("Error fetching metadata:", error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Get movies category
 
 // POST route to add a new category
